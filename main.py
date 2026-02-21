@@ -66,6 +66,7 @@ def fetch_rss(url, category):
     items = []
     try:
         feed = feedparser.parse(url)
+        # 회원님이 변경하신 7일 기준으로 넉넉하게 세팅!
         cutoff = datetime.datetime.now() - datetime.timedelta(days=7)
         for entry in feed.entries:
             if 'published_parsed' in entry and entry.published_parsed:
@@ -92,9 +93,11 @@ def get_candidates(mode):
     if mode == "TECH":
         urls = ["https://www.theverge.com/rss/index.xml", "https://techcrunch.com/feed/"]
     elif mode == "BIO":
-        urls = ["https://news.google.com/rss/search?q=Biotech+FDA+approval+Clinical+Trial+results&hl=en-US&gl=US&ceid=US:en"]
+        # 검색 조건 완화 (OR 사용): 바이오, FDA 승인, 임상시험 중 하나라도 포함되면 수집
+        urls = ["https://news.google.com/rss/search?q=Biotech+OR+%22FDA+approval%22+OR+%22Clinical+Trial%22&hl=en-US&gl=US&ceid=US:en"]
     elif mode == "PATENT":
-        urls = ["https://news.google.com/rss/search?q=Patent+Technology+Innovation+Future&hl=en-US&gl=US&ceid=US:en"]
+        # 검색 조건 완화 (OR 사용): 특허, 기술 혁신 중 하나라도 포함되면 수집
+        urls = ["https://news.google.com/rss/search?q=Patent+OR+%22Technology+Innovation%22+OR+%22Future+Tech%22&hl=en-US&gl=US&ceid=US:en"]
     
     for u in urls: items.extend(fetch_rss(u, mode))
     return items
@@ -205,7 +208,7 @@ def write_blog_post(topic1, topic2, category_name):
       
     - <h2>🔍 SEO 및 태그 정보 (업로드용)</h2>
     - <div style="background-color:#f0f4f8; padding:20px; border-radius:8px; border:1px solid #d1e1f0;">
-        <p><b>Meta Description (한 줄 요약):</b> [여기에 전체 글을 아우르는 150자 이내의 매력적인 요약 작성]</p>
+        <p><b>Meta 초안 (한 줄 요약):</b> [여기에 전체 글을 아우르는 150자 이내의 매력적인 요약 작성]</p>
         <p><b>추천 태그:</b> [여기에 쉼표(,)로 구분된 검색 키워드 7개 작성. 예: #인공지능, #테크놀로지]</p>
       </div>
 
