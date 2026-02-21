@@ -66,6 +66,7 @@ def fetch_rss(url, category):
     items = []
     try:
         feed = feedparser.parse(url)
+        # 회원님이 변경하신 7일 기준으로 넉넉하게 세팅!
         cutoff = datetime.datetime.now() - datetime.timedelta(days=7)
         for entry in feed.entries:
             if 'published_parsed' in entry and entry.published_parsed:
@@ -92,8 +93,10 @@ def get_candidates(mode):
     if mode == "TECH":
         urls = ["https://www.theverge.com/rss/index.xml", "https://techcrunch.com/feed/"]
     elif mode == "BIO":
+        # 검색 조건 완화 (OR 사용): 바이오, FDA 승인, 임상시험 중 하나라도 포함되면 수집
         urls = ["https://news.google.com/rss/search?q=Biotech+OR+%22FDA+approval%22+OR+%22Clinical+Trial%22&hl=en-US&gl=US&ceid=US:en"]
     elif mode == "PATENT":
+        # 검색 조건 완화 (OR 사용): 특허, 기술 혁신 중 하나라도 포함되면 수집
         urls = ["https://news.google.com/rss/search?q=Patent+OR+%22Technology+Innovation%22+OR+%22Future+Tech%22&hl=en-US&gl=US&ceid=US:en"]
     
     for u in urls: items.extend(fetch_rss(u, mode))
@@ -106,8 +109,8 @@ def select_top_2(candidates, history, category_name):
     
     if len(filtered) < 2: return filtered[:2]
     
-    # 💡 빠르고 안정적인 모델로 변경!
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # 💡 Gemini 3 Flash Preview로 변경
+    model = genai.GenerativeModel('gemini-3.0-flash-preview')
     cand_txt = "\n".join([f"{i}. {c['title']}" for i, c in enumerate(filtered[:15])])
     
     prompt = f"""
@@ -131,10 +134,10 @@ def select_top_2(candidates, history, category_name):
 
 # --- 3. 글 작성 ---
 def write_blog_post(topic1, topic2, category_name):
-    print(f"Writing {category_name} Post with Gemini 1.5 Flash...")
+    print(f"Writing {category_name} Post with Gemini 3 Flash Preview...")
     
-    # 💡 빠르고 안정적인 모델로 변경!
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # 💡 Gemini 3 Flash Preview 유지
+    model = genai.GenerativeModel('gemini-3.0-flash-preview')
     
     structure_instruction = """
     각 주제별로 반드시 아래 5가지 H2 태그 섹션을 포함해야 함:
@@ -232,8 +235,8 @@ def get_image_tag(keyword, alt_text=""):
     except: return ""
 
 def inject_images(html_text, t1, t2):
-    # 💡 빠르고 안정적인 모델로 변경!
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # 💡 Gemini 3 Flash Preview 유지
+    model = genai.GenerativeModel('gemini-3.0-flash-preview')
     try:
         k1_main = model.generate_content(f"Extract one main object noun from: {t1['title']}").text.strip()
         k1_sub = model.generate_content(f"Extract abstract concept (e.g. data, biology) from: {t1['title']}").text.strip()
@@ -254,7 +257,7 @@ def send_email(subject, final_content):
     
     email_body = f"""
     <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto;">
-        <h2 style="color: #2c3e50;">스포(spo) 편집장님, 새 포스팅이 준비되었습니다! 🎉 (Gemini 1.5 Flash)</h2>
+        <h2 style="color: #2c3e50;">스포(spo) 편집장님, 새 포스팅이 준비되었습니다! 🎉 (Gemini 3 Flash Preview)</h2>
         <p style="color: #e74c3c; font-weight: bold;">[티스토리 업로드용 HTML 코드]</p>
         <p style="font-size: 14px; color: #555;">아래 박스 안쪽을 클릭하고 <code>Ctrl+A</code>(전체선택) 후 복사하여 티스토리 'HTML 모드'에 붙여넣으세요. 맨 하단의 SEO 정보는 태그 입력 시 활용하세요.</p>
         
