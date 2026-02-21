@@ -1,0 +1,41 @@
+name: Spo AI Editor Daily Run
+
+on:
+  schedule:
+    # 한국 시간 아침 6시는 UTC(세계표준시) 기준으로 전날 밤 9시입니다. (21:00)
+    - cron: '0 21 * * *' 
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 저장소 코드 가져오기
+      uses: actions/checkout@v4
+
+    - name: 파이썬 세팅하기
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: 부품 설치하기 (requirements.txt)
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: 파이썬 코드 실행하기
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+        EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
+      run: python main.py
+
+    - name: 히스토리 저장하기 (중복 기사 방지)
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add history.json
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update history.json" && git push)
