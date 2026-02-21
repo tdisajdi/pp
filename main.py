@@ -10,7 +10,7 @@ from email.mime.multipart import MIMEMultipart
 import google.generativeai as genai
 import re
 import html
-from bs4 import BeautifulSoup 
+from bs4 import BeautifulSoup
 
 # --- 설정값 ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
