@@ -66,7 +66,7 @@ def fetch_rss(url, category):
     items = []
     try:
         feed = feedparser.parse(url)
-        cutoff = datetime.datetime.now() - datetime.timedelta(days=3)
+        cutoff = datetime.datetime.now() - datetime.timedelta(days=7)
         for entry in feed.entries:
             if 'published_parsed' in entry and entry.published_parsed:
                 pub_date = datetime.datetime.fromtimestamp(time.mktime(entry.published_parsed))
