@@ -12,6 +12,9 @@ import re
 import html
 from bs4 import BeautifulSoup
 
+# SDK 버전 확인용 디버깅 출력 추가
+print(f"Google Generative AI SDK Version: {genai.__version__}")
+
 # --- 설정값 ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 UNSPLASH_ACCESS_KEY = os.environ.get("UNSPLASH_ACCESS_KEY")
