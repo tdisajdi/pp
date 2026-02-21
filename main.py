@@ -7,13 +7,10 @@ import feedparser
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import google.generativeai as genai
+from google import genai  # 신규 SDK로 변경
 import re
 import html
 from bs4 import BeautifulSoup
-
-# SDK 버전 확인용 디버깅 출력 추가
-print(f"Google Generative AI SDK Version: {genai.__version__}")
 
 # --- 설정값 ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -22,7 +19,8 @@ EMAIL_SENDER = os.environ.get("EMAIL_SENDER")
 EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER")
 
-genai.configure(api_key=GEMINI_API_KEY)
+# 신규 SDK 클라이언트 초기화
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 # --- 0. 히스토리 관리 ---
 def load_history(filepath):
@@ -112,8 +110,6 @@ def select_top_2(candidates, history, category_name):
     
     if len(filtered) < 2: return filtered[:2]
     
-    # 💡 Gemini 3 Flash Preview로 변경
-    model = genai.GenerativeModel('gemini-3.0-flash-preview')
     cand_txt = "\n".join([f"{i}. {c['title']}" for i, c in enumerate(filtered[:15])])
     
     prompt = f"""
@@ -128,7 +124,8 @@ def select_top_2(candidates, history, category_name):
     2. 오직 숫자 2개만 반환 (예: 1, 4).
     """
     try:
-        res = model.generate_content(prompt)
+        # 신규 SDK generate_content 문법 적용 (모델 임의 변경 안 함)
+        res = client.models.generate_content(model='gemini-3.0-flash-preview', contents=prompt)
         nums = [int(s) for s in re.findall(r'\b\d+\b', res.text)]
         if len(nums) >= 2:
             return [filtered[nums[0]], filtered[nums[1]]]
@@ -137,10 +134,7 @@ def select_top_2(candidates, history, category_name):
 
 # --- 3. 글 작성 ---
 def write_blog_post(topic1, topic2, category_name):
-    print(f"Writing {category_name} Post with Gemini 3 Flash Preview...")
-    
-    # 💡 Gemini 3 Flash Preview 유지
-    model = genai.GenerativeModel('gemini-3.0-flash-preview')
+    print(f"Writing {category_name} Post with Gemini 3 Flash Preview (New SDK)...")
     
     structure_instruction = """
     각 주제별로 반드시 아래 5가지 H2 태그 섹션을 포함해야 함:
@@ -161,7 +155,11 @@ def write_blog_post(topic1, topic2, category_name):
     각 문단에서 가장 중요한 '핵심 문장'이나 '결정적인 수치'는 반드시 <b> 태그를 사용하여 굵은 글씨로 강조해주세요.
     """
 
-    outline = model.generate_content(f"주제1: {topic1['title']}\n주제2: {topic2['title']}\n위 두 주제로 '{category_name} 심층 분석' 블로그 글 개요 작성.").text
+    # 신규 SDK 문법 적용
+    outline = client.models.generate_content(
+        model='gemini-3.0-flash-preview', 
+        contents=f"주제1: {topic1['title']}\n주제2: {topic2['title']}\n위 두 주제로 '{category_name} 심층 분석' 블로그 글 개요 작성."
+    ).text
     
     p1_prompt = f"""
     역할: 전문 테크/바이오 분석가 '스포(spo)'.
@@ -181,7 +179,7 @@ def write_blog_post(topic1, topic2, category_name):
     - [IMAGE_PLACEHOLDER_2]
     - 주제 1의 모든 내용을 작성하고 멈출 것.
     """
-    part1 = re.sub(r"```[a-zA-Z]*\n?|```", "", model.generate_content(p1_prompt).text).strip()
+    part1 = re.sub(r"```[a-zA-Z]*\n?|```", "", client.models.generate_content(model='gemini-3.0-flash-preview', contents=p1_prompt).text).strip()
     
     p2_prompt = f"""
     앞부분: {part1}
@@ -218,7 +216,7 @@ def write_blog_post(topic1, topic2, category_name):
     - <hr style="border: 0; height: 1px; background: #eee; margin: 40px 0;">
     - <p style="color:grey; font-size: 0.9em; text-align: center;">* 본 콘텐츠는 정보 제공을 목적으로 하며, 투자의 책임은 본인에게 있습니다. <br> Editor: 스포(spo)</p>
     """
-    part2 = re.sub(r"```[a-zA-Z]*\n?|```", "", model.generate_content(p2_prompt).text).strip()
+    part2 = re.sub(r"```[a-zA-Z]*\n?|```", "", client.models.generate_content(model='gemini-3.0-flash-preview', contents=p2_prompt).text).strip()
     
     return part1 + "\n" + part2
 
@@ -238,13 +236,12 @@ def get_image_tag(keyword, alt_text=""):
     except: return ""
 
 def inject_images(html_text, t1, t2):
-    # 💡 Gemini 3 Flash Preview 유지
-    model = genai.GenerativeModel('gemini-3.0-flash-preview')
     try:
-        k1_main = model.generate_content(f"Extract one main object noun from: {t1['title']}").text.strip()
-        k1_sub = model.generate_content(f"Extract abstract concept (e.g. data, biology) from: {t1['title']}").text.strip()
-        k2_main = model.generate_content(f"Extract one main object noun from: {t2['title']}").text.strip()
-        k2_sub = model.generate_content(f"Extract abstract concept from: {t2['title']}").text.strip()
+        # 신규 SDK 문법 적용
+        k1_main = client.models.generate_content(model='gemini-3.0-flash-preview', contents=f"Extract one main object noun from: {t1['title']}").text.strip()
+        k1_sub = client.models.generate_content(model='gemini-3.0-flash-preview', contents=f"Extract abstract concept (e.g. data, biology) from: {t1['title']}").text.strip()
+        k2_main = client.models.generate_content(model='gemini-3.0-flash-preview', contents=f"Extract one main object noun from: {t2['title']}").text.strip()
+        k2_sub = client.models.generate_content(model='gemini-3.0-flash-preview', contents=f"Extract abstract concept from: {t2['title']}").text.strip()
     except: 
         k1_main, k1_sub = "technology", "analysis"
         k2_main, k2_sub = "news", "future"
