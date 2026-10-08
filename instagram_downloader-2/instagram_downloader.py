@@ -224,14 +224,25 @@ def download_profile_posts(username: str, max_count: int | None = None, photo_on
         else:
             print(f"📥 @{username} 최근 {max_count}개 다운로드 중... (총 {total}개)")
 
+        # .complete 표시 파일: 전체 다운로드를 끝까지 마친 계정에만 생성됨
+        #  - 표시 있음: 이후 업데이트 → 이미 받은 게시물을 만나면 중단 (새 글만 받음)
+        #  - 표시 없음: 중간에 끊겼거나 --max로 일부만 받은 상태 → 받은 건 건너뛰고 끝까지 계속
+        os.makedirs(target_dir, exist_ok=True)
+        marker = os.path.join(target_dir, ".complete")
+        incremental = os.path.exists(marker)
+
         count = 0          # 새로 받은 개수
+        skipped = 0        # 이미 있어서 건너뛴 개수
         stopped_early = False
+        finished = True    # 끝까지 다 돌았는가
         for post in profile.get_posts():  # 최신 → 오래된 순
-            # 이미 받은 게시물이 나오면 이후는 전부 예전 것이므로 중단
             if already_downloaded(target_dir, post.shortcode):
-                print(f"   ⏭ 이미 있음 → {post.shortcode} (이전 다운로드 지점 도달, 중단)")
-                stopped_early = True
-                break
+                if incremental:
+                    print(f"   ⏭ 이미 있음 → {post.shortcode} (이전 다운로드 지점 도달, 중단)")
+                    stopped_early = True
+                    break
+                skipped += 1
+                continue
 
             L.download_post(post, target=target_dir)
             count += 1
@@ -239,15 +250,21 @@ def download_profile_posts(username: str, max_count: int | None = None, photo_on
             print(f"   [{count}{limit_str}] {post.shortcode} 저장됨")
 
             if max_count is not None and count >= max_count:
+                finished = False
                 break
 
+        if finished and max_count is None:
+            Path(marker).touch()
+
         msg = f"✅ @{username} 완료 → {target_dir}/"
-        if count == 0 and stopped_early:
+        if count == 0 and (stopped_early or skipped):
             msg += " (새로 받을 게시물 없음)"
         elif count > 0:
             msg += f" (새로 {count}개 저장)"
             if stopped_early:
                 msg += " · 이전 지점에서 중단"
+        if skipped:
+            msg += f" · 기존 {skipped}개 건너뜀"
         print(msg + "\n")
         return True
 
