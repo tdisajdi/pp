@@ -1,0 +1,42 @@
+========================================
+  Instagram 다운로더 사용방법
+========================================
+
+■ 준비물 (처음 한 번만)
+  - Windows + Python  https://www.python.org/downloads/
+    (설치할 때 "Add python.exe to PATH" 체크)
+  - 인스타그램 로그인용 쿠키
+      방법 A) Firefox에서 instagram.com 에 로그인 → Firefox 완전 종료
+              START.bat 맨 위의 set BROWSER=chrome 을 set BROWSER=firefox 로 변경
+      방법 B) 크롬에서 로그인 후 "Get cookies.txt LOCALLY" 확장프로그램으로
+              cookies.txt 를 내보내 START.bat 과 같은 폴더에 넣기
+      ※ 크롬 쿠키는 "Failed to decrypt cookie" 오류가 나는 경우가 많습니다.
+
+■ 사용 순서
+  1. START.bat 더블클릭
+       → 팔로잉 목록 최신화 (새로 팔로우한 계정만 목록 파일에 추가)
+       → 목록의 모든 계정의 게시물 + 릴스 사진 다운로드
+       → 중간에 막히면 같은 계정을 잠시 쉬었다가 이어서 받음
+  2. 다 받은 뒤, 마지막에 sort_faces.bat 더블클릭 (얼굴 분류)
+       → 계정 폴더 안에 single_face / multi_face / no_face 로 나눠짐
+
+■ 저장 위치
+  instagram_downloads\instagram\계정아이디\
+
+■ START.bat 설정 (메모장으로 열어 맨 위)
+  BROWSER=chrome        브라우저 (firefox 권장)
+  LIST=...txt           팔로잉 목록 파일
+  UPDATE_FOLLOWING=1    1=목록 최신화 후 다운로드 / 0=최신화 안 함
+  TARGET=...            팔로잉 목록을 가져올 계정
+  MAX_ACCOUNTS=0        0=전체 / 숫자=앞에서 N명만 (처음엔 5 추천)
+  MAX_RETRY=15          한 계정이 막힐 때 이어받기 최대 횟수
+  RETRY_WAIT=60         이어받기 전 대기 시간(초)
+  SLEEP_REQUEST=12-25   요청 사이 대기 (429가 잦으면 20-40으로)
+
+■ 목록에서 제외하고 싶은 계정
+  following_xxx.txt 에서 그 줄 앞에 # 을 붙이세요. (최신화해도 유지됨)
+
+■ 참고
+  - 이미 받은 게시물은 자동으로 건너뜁니다. 몇 번을 다시 실행해도 됩니다.
+  - 동영상 파일은 받지 않고, 릴스/영상 게시물은 대표 이미지로 저장됩니다.
+  - 429 오류가 계속되면 휴대폰 핫스팟으로 연결해 보세요.

@@ -18,13 +18,14 @@ rem It uses the same browser cookies as the download, so no password is needed.
 rem MAX_ACCOUNTS=0 means all accounts. A number means only the first N accounts.
 rem BROWSER can be firefox, chrome or edge. Chrome and Edge often fail to decrypt cookies.
 rem If a cookies.txt file exists in this folder it is used instead of the browser.
+rem Photos are saved. Videos are not, but reels and video posts are saved as their cover image.
 rem MAX_RETRY = how many times to resume the SAME account when it stops midway.
 rem RETRY_WAIT = seconds to wait before resuming the same account.
 rem ==================================
 
 echo.
 echo ========================================
-echo   Instagram downloader - gallery-dl
+echo   START : refresh following list, then download posts and reels
 echo ========================================
 echo   browser      : %BROWSER%
 echo   cookies file : %COOKIES% - used first if the file exists
@@ -125,6 +126,7 @@ echo  gave up/skipped: !FAIL!
 echo  saved to       : %cd%\instagram_downloads\instagram\
 echo ========================================
 echo  Run this file again any time to resume and fetch new posts.
+echo  Face sorting is separate. Run sort_faces.bat yourself when downloading is done.
 echo.
 pause
 exit /b 0
@@ -134,7 +136,7 @@ rem ---------- download one account, resume until finished ----------
 set TRY=0
 :retry
 set /a TRY+=1
-%PY% -m gallery_dl %AUTH% --download-archive gallery_dl_archive.sqlite3 --sleep-request %SLEEP_REQUEST% -o videos=false -d instagram_downloads "https://www.instagram.com/%~1/"
+%PY% -m gallery_dl %AUTH% --download-archive gallery_dl_archive.sqlite3 --sleep-request %SLEEP_REQUEST% -o include=posts,reels -o videos=false -o previews=video -d instagram_downloads "https://www.instagram.com/%~1/"
 set ERR=!errorlevel!
 if "!ERR!"=="0" goto :acct_ok
 set /a "NOTFOUND=ERR & 16"
