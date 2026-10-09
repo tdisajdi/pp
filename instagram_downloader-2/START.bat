@@ -11,8 +11,10 @@ set UPDATE_FOLLOWING=1
 set TARGET=lilillliilu
 set UPDATE_FROM_SAVED=1
 set SAVED_RANGE=
-set SLEEP_REQUEST=12-25
-set SLEEP_BETWEEN=8
+set SLEEP_REQUEST=25-50
+set BETWEEN_MIN=45
+set BETWEEN_MAX=120
+set MAX_RUN=10
 set MAX_ACCOUNTS=0
 set MAX_RETRY=5
 set RETRY_WAIT=180
@@ -27,6 +29,11 @@ rem It uses the same browser cookies as the download, so no password is needed.
 rem UPDATE_FROM_SAVED=1 also adds the owners of your SAVED posts to the list. These accounts
 rem are downloaded even if you do not follow them, as long as they are public.
 rem SAVED_RANGE limits how many saved posts are scanned, for example 1-300. Empty means all.
+rem GENTLE SETTINGS to avoid blocks:
+rem   SLEEP_REQUEST = seconds to wait between Instagram requests. Bigger is safer.
+rem   BETWEEN_MIN / BETWEEN_MAX = random pause in seconds after each account.
+rem   MAX_RUN = stop after this many accounts were really downloaded in one run. 0 means no limit.
+rem     Accounts marked complete do not count, so each new run continues with the next accounts.
 rem MAX_ACCOUNTS=0 means all accounts. A number means only the first N accounts.
 rem BROWSER can be firefox, chrome or edge. Chrome and Edge often fail to decrypt cookies.
 rem If a cookies.txt file exists in this folder it is used instead of the browser.
@@ -53,7 +60,8 @@ echo   list file    : %LIST%
 echo   update list  : %UPDATE_FOLLOWING%  1=yes 0=no  target=%TARGET%
 echo   add saved    : %UPDATE_FROM_SAVED%  1=yes 0=no
 echo   request delay: %SLEEP_REQUEST% sec
-echo   account delay: %SLEEP_BETWEEN% sec
+echo   account delay: %BETWEEN_MIN%-%BETWEEN_MAX% sec random
+echo   max per run  : %MAX_RUN% accounts, 0 means no limit
 echo   done accounts: %DONE_MODE%  skip / new / all
 echo   retry        : up to %MAX_RETRY% times per account, %RETRY_WAIT% sec apart
 if %MAX_ACCOUNTS% GTR 0 (echo   max accounts : %MAX_ACCOUNTS%) else (echo   max accounts : all)
@@ -142,9 +150,11 @@ set /a SUCCESS=0
 set /a FAIL=0
 set /a CONSEC=0
 set /a SKIPPED=0
+set /a RUNCOUNT=0
 
 for /f "usebackq eol=# tokens=*" %%u in ("%LIST%") do (
   if %MAX_ACCOUNTS% GTR 0 if !N! GEQ %MAX_ACCOUNTS% goto :finish
+  if %MAX_RUN% GTR 0 if !RUNCOUNT! GEQ %MAX_RUN% goto :runlimit
   set /a N+=1
   echo.
   echo ----------------------------------------
@@ -153,7 +163,8 @@ for /f "usebackq eol=# tokens=*" %%u in ("%LIST%") do (
   set RAN=1
   call :do_account %%u
   if !CONSEC! GEQ %MAX_CONSEC_FAIL% goto :abort
-  if "!RAN!"=="1" if %SLEEP_BETWEEN% GTR 0 timeout /t %SLEEP_BETWEEN% /nobreak >nul
+  if "!RAN!"=="1" set /a RUNCOUNT+=1
+  if "!RAN!"=="1" call :between_pause
 )
 
 :finish
@@ -227,5 +238,19 @@ echo  Instagram is probably rejecting the login session or blocking this network
 echo  - Open instagram.com in %BROWSER% and check for a security prompt.
 echo  - Wait a few hours, then run this file again. Finished work is kept.
 echo  - Try a phone hotspot, or log in again in %BROWSER% to refresh the cookies.
+echo ========================================
+goto :finish
+
+:between_pause
+set /a "WAIT=BETWEEN_MIN + RANDOM %% (BETWEEN_MAX - BETWEEN_MIN + 1)"
+echo   resting !WAIT! sec before the next account ...
+timeout /t !WAIT! /nobreak >nul
+exit /b 0
+
+:runlimit
+echo.
+echo ========================================
+echo  Reached MAX_RUN=%MAX_RUN% accounts for this run. This is on purpose, to stay gentle.
+echo  Run this file again later. Finished accounts are skipped, so it continues with the next ones.
 echo ========================================
 goto :finish
