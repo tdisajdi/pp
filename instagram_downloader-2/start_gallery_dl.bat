@@ -9,9 +9,13 @@ set COOKIES=cookies.txt
 set SLEEP_REQUEST=12-25
 set SLEEP_BETWEEN=8
 set MAX_ACCOUNTS=0
+set MAX_RETRY=15
+set RETRY_WAIT=60
 rem MAX_ACCOUNTS=0 means all accounts. A number means only the first N accounts.
 rem BROWSER can be firefox, chrome or edge. Chrome and Edge often fail to decrypt cookies.
 rem If a cookies.txt file exists in this folder it is used instead of the browser.
+rem MAX_RETRY = how many times to resume the SAME account when it stops midway.
+rem RETRY_WAIT = seconds to wait before resuming the same account.
 rem ==================================
 
 echo.
@@ -23,6 +27,7 @@ echo   cookies file : %COOKIES% - used first if the file exists
 echo   list file    : %LIST%
 echo   request delay: %SLEEP_REQUEST% sec
 echo   account delay: %SLEEP_BETWEEN% sec
+echo   retry        : up to %MAX_RETRY% times per account, %RETRY_WAIT% sec apart
 if %MAX_ACCOUNTS% GTR 0 (echo   max accounts : %MAX_ACCOUNTS%) else (echo   max accounts : all)
 echo ========================================
 echo.
@@ -73,13 +78,13 @@ if not exist "%LIST%" (
   exit /b 1
 )
 
-echo.
-echo Starting download. You can stop any time and run again to resume.
-echo.
-
 set AUTH=--cookies-from-browser %BROWSER%
 if exist "%COOKIES%" set AUTH=--cookies "%COOKIES%"
 echo Login source: %AUTH%
+
+echo.
+echo Starting download. You can stop any time and run again to resume.
+echo.
 
 set /a N=0
 set /a SUCCESS=0
@@ -92,13 +97,7 @@ for /f "usebackq eol=# tokens=*" %%u in ("%LIST%") do (
   echo ----------------------------------------
   echo [!N!] %%u
   echo ----------------------------------------
-  %PY% -m gallery_dl %AUTH% --download-archive gallery_dl_archive.sqlite3 --sleep-request %SLEEP_REQUEST% -o videos=false -d instagram_downloads "https://www.instagram.com/%%u/"
-  if errorlevel 1 (
-    echo   [failed or partial] continuing with the next account
-    set /a FAIL+=1
-  ) else (
-    set /a SUCCESS+=1
-  )
+  call :do_account %%u
   if %SLEEP_BETWEEN% GTR 0 timeout /t %SLEEP_BETWEEN% /nobreak >nul
 )
 
@@ -107,10 +106,43 @@ echo.
 echo ========================================
 echo  Done
 echo  accounts tried : !N!
-echo  ok             : !SUCCESS!
-echo  failed         : !FAIL!
+echo  completed      : !SUCCESS!
+echo  gave up/skipped: !FAIL!
 echo  saved to       : %cd%\instagram_downloads\instagram\
 echo ========================================
 echo  Run this file again any time to resume and fetch new posts.
 echo.
 pause
+exit /b 0
+
+rem ---------- download one account, resume until finished ----------
+:do_account
+set TRY=0
+:retry
+set /a TRY+=1
+%PY% -m gallery_dl %AUTH% --download-archive gallery_dl_archive.sqlite3 --sleep-request %SLEEP_REQUEST% -o videos=false -d instagram_downloads "https://www.instagram.com/%~1/"
+set ERR=!errorlevel!
+if "!ERR!"=="0" goto :acct_ok
+set /a "NOTFOUND=ERR & 16"
+set /a "NOFILES=ERR & 64"
+if not "!NOTFOUND!"=="0" goto :acct_skip
+if not "!NOFILES!"=="0" goto :acct_skip
+if !TRY! GEQ %MAX_RETRY% goto :acct_fail
+echo   [attempt !TRY! of %MAX_RETRY% stopped midway] waiting %RETRY_WAIT% sec, then resuming the same account
+timeout /t %RETRY_WAIT% /nobreak >nul
+goto :retry
+
+:acct_ok
+echo   [account finished]
+set /a SUCCESS+=1
+exit /b 0
+
+:acct_skip
+echo   [skipped: account not found or nothing to download]
+set /a FAIL+=1
+exit /b 0
+
+:acct_fail
+echo   [gave up after %MAX_RETRY% attempts - run this file again later]
+set /a FAIL+=1
+exit /b 0
