@@ -8,6 +8,8 @@ set LIST=following_lilillliilu.txt
 set COOKIES=cookies.txt
 set UPDATE_FOLLOWING=1
 set TARGET=lilillliilu
+set UPDATE_FROM_SAVED=1
+set SAVED_RANGE=
 set SLEEP_REQUEST=12-25
 set SLEEP_BETWEEN=8
 set MAX_ACCOUNTS=0
@@ -15,6 +17,9 @@ set MAX_RETRY=15
 set RETRY_WAIT=60
 rem UPDATE_FOLLOWING=1 refreshes the following list of TARGET before downloading. 0 skips it.
 rem It uses the same browser cookies as the download, so no password is needed.
+rem UPDATE_FROM_SAVED=1 also adds the owners of your SAVED posts to the list. These accounts
+rem are downloaded even if you do not follow them, as long as they are public.
+rem SAVED_RANGE limits how many saved posts are scanned, for example 1-300. Empty means all.
 rem MAX_ACCOUNTS=0 means all accounts. A number means only the first N accounts.
 rem BROWSER can be firefox, chrome or edge. Chrome and Edge often fail to decrypt cookies.
 rem If a cookies.txt file exists in this folder it is used instead of the browser.
@@ -31,6 +36,7 @@ echo   browser      : %BROWSER%
 echo   cookies file : %COOKIES% - used first if the file exists
 echo   list file    : %LIST%
 echo   update list  : %UPDATE_FOLLOWING%  1=yes 0=no  target=%TARGET%
+echo   add saved    : %UPDATE_FROM_SAVED%  1=yes 0=no
 echo   request delay: %SLEEP_REQUEST% sec
 echo   account delay: %SLEEP_BETWEEN% sec
 echo   retry        : up to %MAX_RETRY% times per account, %RETRY_WAIT% sec apart
@@ -87,6 +93,17 @@ if "%UPDATE_FOLLOWING%"=="1" (
   %PY% -m gallery_dl %AUTH% --sleep-request %SLEEP_REQUEST% -g "https://www.instagram.com/%TARGET%/following/" > following_raw.txt
   %PY% merge_following.py "%LIST%" following_raw.txt %TARGET%
   if errorlevel 1 echo [WARNING] Could not refresh the list. Continuing with the current list file.
+)
+
+rem ---------- add owners of saved posts ----------
+if "%UPDATE_FROM_SAVED%"=="1" (
+  echo.
+  echo Adding accounts from the saved posts of %TARGET% ...
+  set RANGE_OPT=
+  if not "%SAVED_RANGE%"=="" set RANGE_OPT=--range %SAVED_RANGE%
+  %PY% -m gallery_dl %AUTH% --sleep-request %SLEEP_REQUEST% !RANGE_OPT! -N "{username}" "https://www.instagram.com/%TARGET%/saved/" > saved_raw.txt
+  %PY% merge_following.py "%LIST%" saved_raw.txt %TARGET% saved
+  if errorlevel 1 echo [WARNING] Could not read saved posts. Continuing with the current list file.
 )
 
 if not exist "%LIST%" (
