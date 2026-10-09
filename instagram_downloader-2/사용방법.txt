@@ -26,6 +26,9 @@
   instagram_downloads\instagram\계정아이디\
 
 ■ START.bat 설정 (메모장으로 열어 맨 위)
+  USE_LOGIN=1           0이면 로그인 없이 다운로드 (내 계정을 전혀 건드리지 않음)
+                        → 목록 파일을 그대로 쓰고, 팔로잉/저장 게시물 갱신은 건너뜀
+                        → 공개 계정만 가능. 막히기 쉬우니 MAX_ACCOUNTS=5 처럼 소량씩
   BROWSER=chrome        브라우저 (firefox 권장)
   LIST=...txt           팔로잉 목록 파일
   UPDATE_FOLLOWING=1    1=목록 최신화 후 다운로드 / 0=최신화 안 함

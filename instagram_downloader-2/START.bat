@@ -3,6 +3,7 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 rem ============ settings ============
+set USE_LOGIN=1
 set BROWSER=chrome
 set LIST=following_lilillliilu.txt
 set COOKIES=cookies.txt
@@ -16,6 +17,9 @@ set MAX_ACCOUNTS=0
 set MAX_RETRY=5
 set RETRY_WAIT=180
 set MAX_CONSEC_FAIL=3
+rem USE_LOGIN=0 downloads WITHOUT any login. Your account is not touched at all.
+rem   The list file is used as it is. Following and saved refresh are skipped. Public accounts only.
+rem   Without login Instagram limits requests sooner, so use small batches: MAX_ACCOUNTS=5.
 rem UPDATE_FOLLOWING=1 refreshes the following list of TARGET before downloading. 0 skips it.
 rem It uses the same browser cookies as the download, so no password is needed.
 rem UPDATE_FROM_SAVED=1 also adds the owners of your SAVED posts to the list. These accounts
@@ -35,6 +39,7 @@ echo.
 echo ========================================
 echo   START : refresh following list, then download posts and reels
 echo ========================================
+echo   use login    : %USE_LOGIN%  1=yes 0=no login at all
 echo   browser      : %BROWSER%
 echo   cookies file : %COOKIES% - used first if the file exists
 echo   list file    : %LIST%
@@ -47,7 +52,7 @@ if %MAX_ACCOUNTS% GTR 0 (echo   max accounts : %MAX_ACCOUNTS%) else (echo   max 
 echo ========================================
 echo.
 echo  Before you start:
-echo  1. Be logged in to instagram.com in %BROWSER%, or put cookies.txt in this folder.
+echo  1. USE_LOGIN=1 needs a login: %BROWSER% logged in to instagram.com, or cookies.txt here.
 echo  2. Close %BROWSER% completely. Check Task Manager: no %BROWSER% processes.
 echo  3. Already downloaded posts are skipped automatically.
 echo.
@@ -87,7 +92,10 @@ if errorlevel 1 (
 
 set AUTH=--cookies-from-browser %BROWSER%
 if exist "%COOKIES%" set AUTH=--cookies "%COOKIES%"
-echo Login source: %AUTH%
+if "%USE_LOGIN%"=="0" set AUTH=
+if "%USE_LOGIN%"=="0" set UPDATE_FOLLOWING=0
+if "%USE_LOGIN%"=="0" set UPDATE_FROM_SAVED=0
+if "%USE_LOGIN%"=="0" (echo Login source: none - no login is used) else (echo Login source: %AUTH%)
 
 rem ---------- refresh the following list ----------
 if "%UPDATE_FOLLOWING%"=="1" (
