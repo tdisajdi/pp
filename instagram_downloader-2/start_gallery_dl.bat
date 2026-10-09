@@ -5,11 +5,13 @@ cd /d "%~dp0"
 rem ============ settings ============
 set BROWSER=chrome
 set LIST=following_lilillliilu.txt
+set COOKIES=cookies.txt
 set SLEEP_REQUEST=12-25
 set SLEEP_BETWEEN=8
 set MAX_ACCOUNTS=0
 rem MAX_ACCOUNTS=0 means all accounts. A number means only the first N accounts.
-rem BROWSER can be chrome, edge or firefox.
+rem BROWSER can be firefox, chrome or edge. Chrome and Edge often fail to decrypt cookies.
+rem If a cookies.txt file exists in this folder it is used instead of the browser.
 rem ==================================
 
 echo.
@@ -17,6 +19,7 @@ echo ========================================
 echo   Instagram downloader - gallery-dl
 echo ========================================
 echo   browser      : %BROWSER%
+echo   cookies file : %COOKIES% - used first if the file exists
 echo   list file    : %LIST%
 echo   request delay: %SLEEP_REQUEST% sec
 echo   account delay: %SLEEP_BETWEEN% sec
@@ -24,7 +27,7 @@ if %MAX_ACCOUNTS% GTR 0 (echo   max accounts : %MAX_ACCOUNTS%) else (echo   max 
 echo ========================================
 echo.
 echo  Before you start:
-echo  1. Be logged in to instagram.com in %BROWSER%.
+echo  1. Be logged in to instagram.com in %BROWSER%, or put cookies.txt in this folder.
 echo  2. Close %BROWSER% completely. Check Task Manager: no %BROWSER% processes.
 echo  3. Already downloaded posts are skipped automatically.
 echo.
@@ -74,6 +77,10 @@ echo.
 echo Starting download. You can stop any time and run again to resume.
 echo.
 
+set AUTH=--cookies-from-browser %BROWSER%
+if exist "%COOKIES%" set AUTH=--cookies "%COOKIES%"
+echo Login source: %AUTH%
+
 set /a N=0
 set /a SUCCESS=0
 set /a FAIL=0
@@ -85,7 +92,7 @@ for /f "usebackq eol=# tokens=*" %%u in ("%LIST%") do (
   echo ----------------------------------------
   echo [!N!] %%u
   echo ----------------------------------------
-  %PY% -m gallery_dl --cookies-from-browser %BROWSER% --download-archive gallery_dl_archive.sqlite3 --sleep-request %SLEEP_REQUEST% -o videos=false -d instagram_downloads "https://www.instagram.com/%%u/"
+  %PY% -m gallery_dl %AUTH% --download-archive gallery_dl_archive.sqlite3 --sleep-request %SLEEP_REQUEST% -o videos=false -d instagram_downloads "https://www.instagram.com/%%u/"
   if errorlevel 1 (
     echo   [failed or partial] continuing with the next account
     set /a FAIL+=1
