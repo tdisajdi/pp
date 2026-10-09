@@ -13,8 +13,9 @@ set SAVED_RANGE=
 set SLEEP_REQUEST=12-25
 set SLEEP_BETWEEN=8
 set MAX_ACCOUNTS=0
-set MAX_RETRY=15
-set RETRY_WAIT=60
+set MAX_RETRY=5
+set RETRY_WAIT=180
+set MAX_CONSEC_FAIL=3
 rem UPDATE_FOLLOWING=1 refreshes the following list of TARGET before downloading. 0 skips it.
 rem It uses the same browser cookies as the download, so no password is needed.
 rem UPDATE_FROM_SAVED=1 also adds the owners of your SAVED posts to the list. These accounts
@@ -26,6 +27,8 @@ rem If a cookies.txt file exists in this folder it is used instead of the browse
 rem Photos are saved. Videos are not, but reels and video posts are saved as their cover image.
 rem MAX_RETRY = how many times to resume the SAME account when it stops midway.
 rem RETRY_WAIT = seconds to wait before resuming the same account.
+rem MAX_CONSEC_FAIL = stop the whole run after this many accounts in a row gave up.
+rem   This protects your account when Instagram rejects the login session.
 rem ==================================
 
 echo.
@@ -121,6 +124,7 @@ echo.
 set /a N=0
 set /a SUCCESS=0
 set /a FAIL=0
+set /a CONSEC=0
 
 for /f "usebackq eol=# tokens=*" %%u in ("%LIST%") do (
   if %MAX_ACCOUNTS% GTR 0 if !N! GEQ %MAX_ACCOUNTS% goto :finish
@@ -130,6 +134,7 @@ for /f "usebackq eol=# tokens=*" %%u in ("%LIST%") do (
   echo [!N!] %%u
   echo ----------------------------------------
   call :do_account %%u
+  if !CONSEC! GEQ %MAX_CONSEC_FAIL% goto :abort
   if %SLEEP_BETWEEN% GTR 0 timeout /t %SLEEP_BETWEEN% /nobreak >nul
 )
 
@@ -168,6 +173,7 @@ goto :retry
 :acct_ok
 echo   [account finished]
 set /a SUCCESS+=1
+set /a CONSEC=0
 exit /b 0
 
 :acct_skip
@@ -178,4 +184,16 @@ exit /b 0
 :acct_fail
 echo   [gave up after %MAX_RETRY% attempts - run this file again later]
 set /a FAIL+=1
+set /a CONSEC+=1
 exit /b 0
+
+:abort
+echo.
+echo ========================================
+echo  [STOPPED] %MAX_CONSEC_FAIL% accounts in a row failed.
+echo  Instagram is probably rejecting the login session or blocking this network.
+echo  - Open instagram.com in %BROWSER% and check for a security prompt.
+echo  - Wait a few hours, then run this file again. Finished work is kept.
+echo  - Try a phone hotspot, or log in again in %BROWSER% to refresh the cookies.
+echo ========================================
+goto :finish
