@@ -184,9 +184,12 @@ def get_following_list(username: str) -> list[str]:
     L = create_loader()
     try:
         profile = instaloader.Profile.from_username(L.context, username)
-        if profile.is_private:
+        can_view = (not profile.is_private) or profile.followed_by_viewer or LOGIN_USER == username
+        if not can_view:
             print(f"❌ @{username} 은(는) 비공개 계정입니다. 팔로잉 목록을 볼 수 없습니다.")
             return []
+        if not LOGIN_USER:
+            print("⚠ 로그인 없이는 팔로잉 목록을 가져오지 못할 수 있습니다. --login 아이디 를 붙여 보세요.")
 
         print(f"📋 @{username} 의 팔로잉 목록을 가져오는 중... (시간이 걸릴 수 있습니다)")
         followees = []
@@ -448,15 +451,36 @@ def main():
             sys.exit(1)
 
         filename = f"following_{target}.txt"
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"# @{target} 의 팔로잉 목록\n")
-            f.write("# 다운로드 하기 싫은 계정은 앞에 # 을 붙여주세요. 예: #username\n")
-            f.write("# ------------------------------------------------\n")
-            for name in followees:
-                f.write(name + "\n")
-
-        print(f"📄 팔로잉 명단 저장 완료: {filename}")
-        print(f"   총 {len(followees)}명")
+        added = []
+        if os.path.exists(filename):
+            # 최신화: 기존 줄(# 제외 표시 포함)은 그대로 두고, 새로 팔로우한 계정만 아래에 추가
+            with open(filename, "r", encoding="utf-8") as f:
+                old_lines = f.read().splitlines()
+            known = {l.strip().lstrip("#").strip().lower() for l in old_lines if l.strip()}
+            added = [n for n in followees if n.lower() not in known]
+            current = {n.lower() for n in followees}
+            unfollowed = [l.strip() for l in old_lines
+                          if l.strip() and not l.strip().startswith("#")
+                          and l.strip().lower() not in current]
+            with open(filename, "a", encoding="utf-8") as f:
+                if added:
+                    f.write(f"# ---- 새로 추가된 계정 ({time.strftime('%Y-%m-%d')}) ----\n")
+                    for name in added:
+                        f.write(name + "\n")
+            print(f"📄 팔로잉 명단 최신화 완료: {filename}")
+            print(f"   새로 추가 {len(added)}명 / 현재 팔로잉 {len(followees)}명")
+            if unfollowed:
+                print(f"   ⚠ 이제 팔로우하지 않는 계정 {len(unfollowed)}명 (파일에는 그대로 남겨 둠): {', '.join(unfollowed[:10])}"
+                      + (" ..." if len(unfollowed) > 10 else ""))
+        else:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(f"# @{target} 의 팔로잉 목록\n")
+                f.write("# 다운로드 하기 싫은 계정은 앞에 # 을 붙여주세요. 예: #username\n")
+                f.write("# ------------------------------------------------\n")
+                for name in followees:
+                    f.write(name + "\n")
+            print(f"📄 팔로잉 명단 저장 완료: {filename}")
+            print(f"   총 {len(followees)}명")
         print()
         print("💡 다운로드 안 할 계정이 있으면 파일을 열어서 해당 줄 앞에 # 을 붙이세요.")
         print("   예: #annoying_user")
