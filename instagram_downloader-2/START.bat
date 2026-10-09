@@ -4,12 +4,12 @@ cd /d "%~dp0"
 
 rem ============ settings ============
 set USE_LOGIN=1
-set BROWSER=chrome
+set BROWSER=firefox
 set LIST=following_lilillliilu.txt
 set COOKIES=cookies.txt
-set UPDATE_FOLLOWING=1
+set UPDATE_FOLLOWING=0
 set TARGET=lilillliilu
-set UPDATE_FROM_SAVED=1
+set UPDATE_FROM_SAVED=0
 set SAVED_RANGE=
 set SLEEP_REQUEST=25-50
 set BETWEEN_MIN=45

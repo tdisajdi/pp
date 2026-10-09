@@ -12,6 +12,14 @@
               cookies.txt 를 내보내 START.bat 과 같은 폴더에 넣기
       ※ 크롬 쿠키는 "Failed to decrypt cookie" 오류가 나는 경우가 많습니다.
 
+■ 기존 폴더에 덮어쓸 때 (중요)
+  - 이 zip에는 following_xxx.txt (목록 파일)이 일부러 들어 있지 않습니다.
+    기존 목록(# 제외 표시 포함)을 덮어쓰지 않기 위해서입니다. 기존 파일을 그대로 두세요.
+  - 아래 옛 파일은 지우세요: start_gallery_dl.bat, update_following.bat, start.sh
+  - instagram_downloads 폴더, gallery_dl_archive.sqlite3, cookies.txt 는 건드리지 마세요.
+  - 기본값: BROWSER=firefox, UPDATE_FOLLOWING=0, UPDATE_FROM_SAVED=0
+    (새 계정으로 받을 때는 본계정의 팔로잉/저장 게시물을 읽을 수 없으므로 꺼 둠)
+
 ■ 사용 순서
   1. START.bat 더블클릭
        → 팔로잉 목록 최신화 (새로 팔로우한 계정만 목록 파일에 추가)
