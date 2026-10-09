@@ -3,22 +3,24 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 rem ============ settings ============
+set BROWSER=chrome
+set COOKIES=cookies.txt
+set LIST=following_lilillliilu.txt
 set TARGET=lilillliilu
-set LOGIN_ID=lilillliilu
-rem TARGET   = the account whose following list you want.
-rem LOGIN_ID = the Instagram account to log in with. A saved session is reused after the first time.
+set SLEEP_REQUEST=12-25
+rem Same cookie settings as start_gallery_dl.bat. No password needed.
 rem ==================================
 
 echo.
 echo ========================================
-echo   Update following list
+echo   Update following list only
 echo ========================================
-echo   target account : %TARGET%
-echo   login account  : %LOGIN_ID%
+echo   target : %TARGET%
+echo   list   : %LIST%
 echo.
-echo  - Existing lines in following_%TARGET%.txt are kept, including # excluded ones.
-echo  - Only newly followed accounts are added at the bottom.
-echo  - First time only: type the password. Nothing shows while typing, press Enter.
+echo  - Be logged in to instagram.com in %BROWSER%, or put cookies.txt in this folder.
+echo  - Close %BROWSER% completely first.
+echo  - Existing lines are kept, including # excluded ones. Only new accounts are added.
 echo.
 pause
 
@@ -30,24 +32,20 @@ if "%PY%"=="" (
   if not errorlevel 1 set PY=py
 )
 if "%PY%"=="" (
-  echo.
   echo [ERROR] Python is not installed. Install it from https://www.python.org/downloads/
   pause
   exit /b 1
 )
 
-%PY% -m pip show instaloader >nul 2>nul
-if errorlevel 1 (
-  echo Installing instaloader...
-  %PY% -m pip install -U instaloader
-  if errorlevel 1 (
-    echo [ERROR] Failed to install instaloader.
-    pause
-    exit /b 1
-  )
-)
+%PY% -m pip show gallery-dl >nul 2>nul
+if errorlevel 1 %PY% -m pip install -U gallery-dl
 
-%PY% instagram_downloader.py --following %TARGET% --login %LOGIN_ID%
+set AUTH=--cookies-from-browser %BROWSER%
+if exist "%COOKIES%" set AUTH=--cookies "%COOKIES%"
+echo Login source: %AUTH%
+
+%PY% -m gallery_dl %AUTH% --sleep-request %SLEEP_REQUEST% -g "https://www.instagram.com/%TARGET%/following/" > following_raw.txt
+%PY% merge_following.py "%LIST%" following_raw.txt %TARGET%
 
 echo.
 pause
