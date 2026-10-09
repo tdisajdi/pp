@@ -17,6 +17,8 @@ set MAX_ACCOUNTS=0
 set MAX_RETRY=5
 set RETRY_WAIT=180
 set MAX_CONSEC_FAIL=3
+set DONE_MODE=skip
+set NEW_CHECK=10
 rem USE_LOGIN=0 downloads WITHOUT any login. Your account is not touched at all.
 rem   The list file is used as it is. Following and saved refresh are skipped. Public accounts only.
 rem   Without login Instagram limits requests sooner, so use small batches: MAX_ACCOUNTS=5.
@@ -31,6 +33,11 @@ rem If a cookies.txt file exists in this folder it is used instead of the browse
 rem Photos are saved. Videos are not, but reels and video posts are saved as their cover image.
 rem MAX_RETRY = how many times to resume the SAME account when it stops midway.
 rem RETRY_WAIT = seconds to wait before resuming the same account.
+rem DONE_MODE decides what happens to accounts that were already downloaded to the end:
+rem   skip = do not touch them at all. all = scan everything again.
+rem   new  = only look for new posts, stopping after NEW_CHECK known files in a row.
+rem An account is marked as complete only when a run finishes without errors.
+rem The mark is a hidden file named .done inside the account folder. Delete it to force a rescan.
 rem MAX_CONSEC_FAIL = stop the whole run after this many accounts in a row gave up.
 rem   This protects your account when Instagram rejects the login session.
 rem ==================================
@@ -47,6 +54,7 @@ echo   update list  : %UPDATE_FOLLOWING%  1=yes 0=no  target=%TARGET%
 echo   add saved    : %UPDATE_FROM_SAVED%  1=yes 0=no
 echo   request delay: %SLEEP_REQUEST% sec
 echo   account delay: %SLEEP_BETWEEN% sec
+echo   done accounts: %DONE_MODE%  skip / new / all
 echo   retry        : up to %MAX_RETRY% times per account, %RETRY_WAIT% sec apart
 if %MAX_ACCOUNTS% GTR 0 (echo   max accounts : %MAX_ACCOUNTS%) else (echo   max accounts : all)
 echo ========================================
@@ -133,6 +141,7 @@ set /a N=0
 set /a SUCCESS=0
 set /a FAIL=0
 set /a CONSEC=0
+set /a SKIPPED=0
 
 for /f "usebackq eol=# tokens=*" %%u in ("%LIST%") do (
   if %MAX_ACCOUNTS% GTR 0 if !N! GEQ %MAX_ACCOUNTS% goto :finish
@@ -141,9 +150,10 @@ for /f "usebackq eol=# tokens=*" %%u in ("%LIST%") do (
   echo ----------------------------------------
   echo [!N!] %%u
   echo ----------------------------------------
+  set RAN=1
   call :do_account %%u
   if !CONSEC! GEQ %MAX_CONSEC_FAIL% goto :abort
-  if %SLEEP_BETWEEN% GTR 0 timeout /t %SLEEP_BETWEEN% /nobreak >nul
+  if "!RAN!"=="1" if %SLEEP_BETWEEN% GTR 0 timeout /t %SLEEP_BETWEEN% /nobreak >nul
 )
 
 :finish
@@ -152,6 +162,7 @@ echo ========================================
 echo  Done
 echo  accounts tried : !N!
 echo  completed      : !SUCCESS!
+echo  already done   : !SKIPPED!
 echo  gave up/skipped: !FAIL!
 echo  saved to       : %cd%\instagram_downloads\instagram\
 echo ========================================
@@ -163,10 +174,16 @@ exit /b 0
 
 rem ---------- download one account, resume until finished ----------
 :do_account
+set EXTRA=
+set DONEDIR=instagram_downloads\instagram\%~1
+if not exist "%DONEDIR%\.done" goto :start_try
+if "%DONE_MODE%"=="skip" goto :already_done
+if "%DONE_MODE%"=="new" set EXTRA=-A %NEW_CHECK%
+:start_try
 set TRY=0
 :retry
 set /a TRY+=1
-%PY% -m gallery_dl %AUTH% --download-archive gallery_dl_archive.sqlite3 --sleep-request %SLEEP_REQUEST% -o include=posts,reels -o videos=false -o previews=video -d instagram_downloads "https://www.instagram.com/%~1/"
+%PY% -m gallery_dl %AUTH% --download-archive gallery_dl_archive.sqlite3 --sleep-request %SLEEP_REQUEST% %EXTRA% -o include=posts,reels -o videos=false -o previews=video -d instagram_downloads "https://www.instagram.com/%~1/"
 set ERR=!errorlevel!
 if "!ERR!"=="0" goto :acct_ok
 set /a "NOTFOUND=ERR & 16"
@@ -181,7 +198,14 @@ goto :retry
 :acct_ok
 echo   [account finished]
 set /a SUCCESS+=1
+if exist "%DONEDIR%\" type nul > "%DONEDIR%\.done"
 set /a CONSEC=0
+exit /b 0
+
+:already_done
+echo   [already complete - skipped]
+set /a SKIPPED+=1
+set RAN=0
 exit /b 0
 
 :acct_skip
