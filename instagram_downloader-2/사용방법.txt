@@ -63,6 +63,13 @@
   - 그 계정의 새 글이 궁금하면 DONE_MODE=new 로 바꾸세요. 강제로 다시 보려면 .done 을 삭제.
   - 이전에 받던 계정들은 표시가 없으니, 한 번 더 끝까지 돌고 나면 표시됩니다.
 
+■ Edge만 쓸 수 있을 때
+  - START.bat 이 "msedge.exe is still running" 이라고 하면 Edge가 쿠키 파일을 잡고 있는 겁니다.
+    작업 관리자에서 msedge.exe 를 모두 종료하거나, 명령 프롬프트에서  taskkill /F /IM msedge.exe
+  - 그래도 Failed to decrypt cookie 가 나오면 cookies.txt 를 내보내 같은 폴더에 넣으세요.
+    (Edge에서 "다른 스토어 확장 허용"을 켜고 Get cookies.txt LOCALLY 설치 → instagram.com 에서 Export)
+    cookies.txt 가 있으면 브라우저를 종료하지 않아도 됩니다.
+
 ■ 차단을 피하는 요령
   - 새 계정은 처음 며칠은 평소처럼 앱을 쓰세요 (이메일/전화 인증, 프로필 사진 등).
   - 평소 쓰는 PC, 같은 집 인터넷에서 Firefox로 직접 로그인하세요. VPN은 끄세요.

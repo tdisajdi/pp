@@ -4,7 +4,7 @@ cd /d "%~dp0"
 
 rem ============ settings ============
 set USE_LOGIN=1
-set BROWSER=firefox
+set BROWSER=edge
 set LIST=following_lilillliilu.txt
 set COOKIES=cookies.txt
 set UPDATE_FOLLOWING=0
@@ -35,7 +35,8 @@ rem   BETWEEN_MIN / BETWEEN_MAX = random pause in seconds after each account.
 rem   MAX_RUN = stop after this many accounts were really downloaded in one run. 0 means no limit.
 rem     Accounts marked complete do not count, so each new run continues with the next accounts.
 rem MAX_ACCOUNTS=0 means all accounts. A number means only the first N accounts.
-rem BROWSER can be firefox, chrome or edge. Chrome and Edge often fail to decrypt cookies.
+rem BROWSER can be edge, firefox or chrome. Chrome and Edge often fail to decrypt cookies.
+rem If so, export cookies.txt from the browser and put it in this folder. That is the most reliable.
 rem If a cookies.txt file exists in this folder it is used instead of the browser.
 rem Photos are saved. Videos are not, but reels and video posts are saved as their cover image.
 rem MAX_RETRY = how many times to resume the SAME account when it stops midway.
@@ -112,6 +113,24 @@ if "%USE_LOGIN%"=="0" set AUTH=
 if "%USE_LOGIN%"=="0" set UPDATE_FOLLOWING=0
 if "%USE_LOGIN%"=="0" set UPDATE_FROM_SAVED=0
 if "%USE_LOGIN%"=="0" (echo Login source: none - no login is used) else (echo Login source: %AUTH%)
+
+rem ---------- make sure the browser is closed, otherwise its cookies are locked ----------
+set BEXE=%BROWSER%.exe
+if "%BROWSER%"=="edge" set BEXE=msedge.exe
+if "%USE_LOGIN%"=="0" goto :browser_ok
+if exist "%COOKIES%" goto :browser_ok
+:checkbrowser
+tasklist /FI "IMAGENAME eq %BEXE%" 2>nul | find /I "%BEXE%" >nul
+if errorlevel 1 goto :browser_ok
+echo.
+echo [WARNING] %BEXE% is still running, so its cookies are locked and the login fails.
+echo   Close it completely. Check the background processes in Task Manager.
+echo   Or type this in a command window:  taskkill /F /IM %BEXE%
+echo   Better: export cookies.txt and put it in this folder. Then no browser is needed.
+echo   After closing it, press any key to check again.
+pause >nul
+goto :checkbrowser
+:browser_ok
 
 rem ---------- refresh the following list ----------
 if "%UPDATE_FOLLOWING%"=="1" (
