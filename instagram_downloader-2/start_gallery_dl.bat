@@ -6,11 +6,16 @@ rem ============ settings ============
 set BROWSER=chrome
 set LIST=following_lilillliilu.txt
 set COOKIES=cookies.txt
+set UPDATE_FOLLOWING=1
+set TARGET=lilillliilu
+set LOGIN_ID=lilillliilu
 set SLEEP_REQUEST=12-25
 set SLEEP_BETWEEN=8
 set MAX_ACCOUNTS=0
 set MAX_RETRY=15
 set RETRY_WAIT=60
+rem UPDATE_FOLLOWING=1 refreshes the following list before downloading. 0 skips it.
+rem TARGET = account whose following list is refreshed. LOGIN_ID = Instagram account used to log in.
 rem MAX_ACCOUNTS=0 means all accounts. A number means only the first N accounts.
 rem BROWSER can be firefox, chrome or edge. Chrome and Edge often fail to decrypt cookies.
 rem If a cookies.txt file exists in this folder it is used instead of the browser.
@@ -25,6 +30,7 @@ echo ========================================
 echo   browser      : %BROWSER%
 echo   cookies file : %COOKIES% - used first if the file exists
 echo   list file    : %LIST%
+echo   update list  : %UPDATE_FOLLOWING%  1=yes 0=no
 echo   request delay: %SLEEP_REQUEST% sec
 echo   account delay: %SLEEP_BETWEEN% sec
 echo   retry        : up to %MAX_RETRY% times per account, %RETRY_WAIT% sec apart
@@ -76,6 +82,19 @@ if not exist "%LIST%" (
   echo Put it in the same folder as this file.
   pause
   exit /b 1
+)
+
+rem ---------- refresh the following list ----------
+if "%UPDATE_FOLLOWING%"=="1" (
+  echo.
+  echo Refreshing the following list of %TARGET% ...
+  %PY% -m pip show instaloader >nul 2>nul
+  if errorlevel 1 %PY% -m pip install -U instaloader
+  %PY% instagram_downloader.py --following %TARGET% --login %LOGIN_ID%
+  if errorlevel 1 (
+    echo.
+    echo [WARNING] Could not refresh the list. Continuing with the current list file.
+  )
 )
 
 set AUTH=--cookies-from-browser %BROWSER%
