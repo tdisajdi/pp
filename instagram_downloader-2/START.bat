@@ -36,7 +36,7 @@ rem   MAX_RUN = stop after this many accounts were really downloaded in one run.
 rem     Accounts marked complete do not count, so each new run continues with the next accounts.
 rem MAX_ACCOUNTS=0 means all accounts. A number means only the first N accounts.
 rem BROWSER can be edge, firefox or chrome. Chrome and Edge often fail to decrypt cookies.
-rem If so, export cookies.txt from the browser and put it in this folder. That is the most reliable.
+rem If so, run make_cookies.bat once. It creates cookies.txt, which is the most reliable.
 rem If a cookies.txt file exists in this folder it is used instead of the browser.
 rem Photos are saved. Videos are not, but reels and video posts are saved as their cover image.
 rem MAX_RETRY = how many times to resume the SAME account when it stops midway.
@@ -126,7 +126,7 @@ echo.
 echo [WARNING] %BEXE% is still running, so its cookies are locked and the login fails.
 echo   Close it completely. Check the background processes in Task Manager.
 echo   Or type this in a command window:  taskkill /F /IM %BEXE%
-echo   Better: export cookies.txt and put it in this folder. Then no browser is needed.
+echo   Better: run make_cookies.bat once to create cookies.txt. Then no browser is needed.
 echo   After closing it, press any key to check again.
 pause >nul
 goto :checkbrowser

@@ -66,9 +66,14 @@
 ■ Edge만 쓸 수 있을 때
   - START.bat 이 "msedge.exe is still running" 이라고 하면 Edge가 쿠키 파일을 잡고 있는 겁니다.
     작업 관리자에서 msedge.exe 를 모두 종료하거나, 명령 프롬프트에서  taskkill /F /IM msedge.exe
-  - 그래도 Failed to decrypt cookie 가 나오면 cookies.txt 를 내보내 같은 폴더에 넣으세요.
-    (Edge에서 "다른 스토어 확장 허용"을 켜고 Get cookies.txt LOCALLY 설치 → instagram.com 에서 Export)
-    cookies.txt 가 있으면 브라우저를 종료하지 않아도 됩니다.
+  - 가장 확실한 방법: make_cookies.bat 을 한 번 실행해 cookies.txt 를 만드세요. (확장 프로그램 불필요)
+      1) Edge에서 새 계정으로 instagram.com 로그인
+      2) F12 → Application(애플리케이션) → Storage → Cookies → https://www.instagram.com
+      3) sessionid 행의 Value 를 더블클릭해 복사 (Ctrl+C)
+      4) make_cookies.bat 실행 → 붙여넣기(마우스 우클릭) → Enter
+    cookies.txt 가 있으면 START.bat 이 그 파일을 쓰고, Edge를 종료하지 않아도 됩니다.
+  - sessionid 는 로그인 정보와 같으니 다른 사람에게 보내지 마세요.
+    Edge에서 로그아웃하면 그 값은 쓸 수 없게 되니, 받는 동안은 로그아웃하지 마세요.
 
 ■ 차단을 피하는 요령
   - 새 계정은 처음 며칠은 평소처럼 앱을 쓰세요 (이메일/전화 인증, 프로필 사진 등).
