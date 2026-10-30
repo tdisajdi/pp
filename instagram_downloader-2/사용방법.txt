@@ -12,6 +12,8 @@
               cookies.txt 를 내보내 START.bat 과 같은 폴더에 넣기
       ※ 크롬 쿠키는 "Failed to decrypt cookie" 오류가 나는 경우가 많습니다.
 
+■ 폰(안드로이드)에서 쓰려면 폰사용방법.txt 와 start.sh 를 보세요.
+
 ■ 새 목록 (Instagram 내보내기 파일에서 만든 목록)
   - following_camel.3873048.txt : camel.3873048 계정이 팔로잉하는 657개 계정
   - START.bat 의 LIST 가 이 파일을 가리킵니다. 기존 following_lilillliilu.txt 는 그대로 두면 됩니다.

@@ -1,0 +1,62 @@
+========================================
+  폰(안드로이드)에서 쓰는 방법  -  Termux
+========================================
+※ 이 방법은 안드로이드용입니다. 아이폰은 확인하지 못했습니다.
+※ 직접 폰에서 돌려 본 것이 아니라, 같은 로직을 가짜 gallery-dl로 시험한 것입니다.
+  막히는 곳이 있으면 화면에 나온 내용을 그대로 알려 주세요.
+
+■ 1. 앱 설치 (처음 한 번)
+  - Termux 앱을 F-Droid 또는 GitHub에서 설치하세요.
+    (구글 플레이 버전은 오래되어 권장하지 않습니다)
+
+■ 2. 준비 (처음 한 번, Termux에 입력)
+    termux-setup-storage            ← 나오는 권한 요청은 "허용"
+    pkg update -y && pkg install -y python unzip
+
+■ 3. 파일 풀기
+  - 받은 zip 을 폰의 "다운로드" 폴더에 둡니다. (zip 이름은 실제 이름으로)
+    cd ~
+    unzip ~/storage/downloads/instagram_downloader_camel.zip
+    cd instagram_downloader
+
+■ 4. 실행
+    bash start.sh
+  - gallery-dl 은 없으면 알아서 설치합니다.
+  - cookies.txt 가 없으면 "로그인 없이" 돌아갑니다. 공개 계정만 받아집니다.
+  - 기본값: 계정마다 최신 게시물 5개, 한 번에 30개 계정까지.
+    같은 명령을 다시 실행하면 끝난 계정은 건너뛰고 다음 계정부터 이어집니다.
+
+■ 5. 로그인하려면 (선택)
+  - 폰에는 개발자 도구가 없어서 sessionid 를 꺼내기 어렵습니다. PC에서 만든 걸 가져오세요.
+    방법 A) PC에서 make_cookies.bat 로 cookies.txt 를 만들고, 폰으로 옮겨
+            instagram_downloader 폴더 안에 넣기
+            cp ~/storage/downloads/cookies.txt ~/instagram_downloader/
+    방법 B) PC에서 복사한 sessionid 값만 폰으로 보내서, 폰에서
+            python make_cookies.py        ← 값을 붙여넣고 엔터
+  - cookies.txt 는 로그인 정보와 같습니다. 다른 사람에게 보내지 마세요.
+
+■ 6. 폰 갤러리에서 보고 싶으면
+  - 사진을 폰의 다운로드 폴더에 저장하려면, 실행할 때 이렇게 쓰세요. (항상 같은 값으로)
+    OUT_DIR=$HOME/storage/shared/Download/instagram_downloads bash start.sh
+  - 설정은 이렇게 한 번만 바꿔 실행할 수도 있습니다.
+    MAX_RUN=10 bash start.sh
+    USE_LOGIN=0 bash start.sh
+    POSTS_PER_ACCOUNT=0 bash start.sh        ← 전체 게시물
+
+■ 7. 도중에 꺼지지 않게
+  - 스크립트가 termux-wake-lock 을 시도합니다. 화면이 꺼져도 도는 동안 폰이 잠들지 않게 하려는 것입니다.
+  - 폰 설정에서 Termux 의 배터리 최적화를 "제한 없음"으로 바꾸면 더 안전합니다.
+
+■ 8. 와이파이를 바꿔 가며 쓰기
+  - 막히면 Ctrl+C 로 멈추고, 다른 와이파이에 연결한 뒤 같은 명령을 다시 실행하세요.
+    받은 것은 그대로고 이어서 받습니다.
+  - 모바일 데이터로 돌리면 데이터가 많이 쓰입니다. 계정 657개 × 게시물 5개면 대략 1GB 안팎일 수
+    있습니다. (대략적인 추정입니다.) 가능하면 와이파이에서 하세요.
+
+■ 9. 얼굴 분류
+  - 폰에서는 설치가 안 될 가능성이 커서 권하지 않습니다.
+  - 사진 폴더를 PC로 옮긴 뒤 sort_faces.bat 으로 분류하세요.
+
+■ 10. 오류가 계속 나면
+  - 연속 3개 계정이 실패하면 스크립트가 알아서 멈춥니다. 몇 시간 쉬었다가 다시 하거나,
+    다른 와이파이로 바꿔 보세요.
