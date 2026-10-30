@@ -12,6 +12,12 @@
               cookies.txt 를 내보내 START.bat 과 같은 폴더에 넣기
       ※ 크롬 쿠키는 "Failed to decrypt cookie" 오류가 나는 경우가 많습니다.
 
+■ 새 목록 (Instagram 내보내기 파일에서 만든 목록)
+  - following_camel.3873048.txt : camel.3873048 계정이 팔로잉하는 657개 계정
+  - START.bat 의 LIST 가 이 파일을 가리킵니다. 기존 following_lilillliilu.txt 는 그대로 두면 됩니다.
+  - 기본 설정은 계정마다 최신 게시물 5개만 받습니다. (POSTS_PER_ACCOUNT=5)
+  - 전체 계정을 한 번에 받는 데 오래 걸립니다. MAX_RUN=30 이라 한 번에 30개 계정씩, 여러 번 나눠 실행하세요.
+
 ■ 기존 폴더에 덮어쓸 때 (중요)
   - 이 zip에는 following_xxx.txt (목록 파일)이 일부러 들어 있지 않습니다.
     기존 목록(# 제외 표시 포함)을 덮어쓰지 않기 위해서입니다. 기존 파일을 그대로 두세요.
@@ -39,6 +45,7 @@
                         → 공개 계정만 가능. 막히기 쉬우니 MAX_ACCOUNTS=5 처럼 소량씩
   BROWSER=chrome        브라우저 (firefox 권장)
   LIST=...txt           팔로잉 목록 파일
+  POSTS_PER_ACCOUNT=5   계정마다 최신 게시물 N개만 받음 (0=전부). N개 모드로 끝낸 계정은 .done_N 표시가 붙어 건너뜀
   UPDATE_FOLLOWING=1    1=목록 최신화 후 다운로드 / 0=최신화 안 함
   TARGET=...            팔로잉/저장 게시물을 가져올 계정 (쿠키로 로그인한 본인 계정)
   UPDATE_FROM_SAVED=1   1=저장한 게시물의 계정도 목록에 추가 / 0=안 함

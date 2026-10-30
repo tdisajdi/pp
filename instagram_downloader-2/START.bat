@@ -5,16 +5,17 @@ cd /d "%~dp0"
 rem ============ settings ============
 set USE_LOGIN=1
 set BROWSER=edge
-set LIST=following_lilillliilu.txt
+set LIST=following_camel.3873048.txt
 set COOKIES=cookies.txt
 set UPDATE_FOLLOWING=0
-set TARGET=lilillliilu
+set TARGET=camel.3873048
 set UPDATE_FROM_SAVED=0
 set SAVED_RANGE=
 set SLEEP_REQUEST=25-50
 set BETWEEN_MIN=45
 set BETWEEN_MAX=120
-set MAX_RUN=10
+set POSTS_PER_ACCOUNT=5
+set MAX_RUN=30
 set MAX_ACCOUNTS=0
 set MAX_RETRY=5
 set RETRY_WAIT=180
@@ -29,6 +30,9 @@ rem It uses the same browser cookies as the download, so no password is needed.
 rem UPDATE_FROM_SAVED=1 also adds the owners of your SAVED posts to the list. These accounts
 rem are downloaded even if you do not follow them, as long as they are public.
 rem SAVED_RANGE limits how many saved posts are scanned, for example 1-300. Empty means all.
+rem POSTS_PER_ACCOUNT = download only the newest N posts of each account. 0 means all posts.
+rem   With N set, an account is marked as done for that N, and later runs skip it.
+rem   In this mode only the posts feed is read, which is fewer requests. Reels are part of it.
 rem GENTLE SETTINGS to avoid blocks:
 rem   SLEEP_REQUEST = seconds to wait between Instagram requests. Bigger is safer.
 rem   BETWEEN_MIN / BETWEEN_MAX = random pause in seconds after each account.
@@ -63,6 +67,7 @@ echo   add saved    : %UPDATE_FROM_SAVED%  1=yes 0=no
 echo   request delay: %SLEEP_REQUEST% sec
 echo   account delay: %BETWEEN_MIN%-%BETWEEN_MAX% sec random
 echo   max per run  : %MAX_RUN% accounts, 0 means no limit
+echo   posts/account: %POSTS_PER_ACCOUNT%  0 means all posts
 echo   done accounts: %DONE_MODE%  skip / new / all
 echo   retry        : up to %MAX_RETRY% times per account, %RETRY_WAIT% sec apart
 if %MAX_ACCOUNTS% GTR 0 (echo   max accounts : %MAX_ACCOUNTS%) else (echo   max accounts : all)
@@ -205,15 +210,23 @@ exit /b 0
 rem ---------- download one account, resume until finished ----------
 :do_account
 set EXTRA=
+set INCLUDE=posts,reels
+set MARK=.done
 set DONEDIR=instagram_downloads\instagram\%~1
-if not exist "%DONEDIR%\.done" goto :start_try
+if not "%POSTS_PER_ACCOUNT%"=="0" set MARK=.done_%POSTS_PER_ACCOUNT%
+if not "%POSTS_PER_ACCOUNT%"=="0" set EXTRA=--post-range 1-%POSTS_PER_ACCOUNT%
+if not "%POSTS_PER_ACCOUNT%"=="0" set INCLUDE=posts
+set ISDONE=0
+if exist "%DONEDIR%\.done" set ISDONE=1
+if exist "%DONEDIR%\%MARK%" set ISDONE=1
+if "%ISDONE%"=="0" goto :start_try
 if "%DONE_MODE%"=="skip" goto :already_done
-if "%DONE_MODE%"=="new" set EXTRA=-A %NEW_CHECK%
+if "%DONE_MODE%"=="new" set EXTRA=%EXTRA% -A %NEW_CHECK%
 :start_try
 set TRY=0
 :retry
 set /a TRY+=1
-%PY% -m gallery_dl %AUTH% --download-archive gallery_dl_archive.sqlite3 --sleep-request %SLEEP_REQUEST% %EXTRA% -o include=posts,reels -o videos=false -o previews=video -d instagram_downloads "https://www.instagram.com/%~1/"
+%PY% -m gallery_dl %AUTH% --download-archive gallery_dl_archive.sqlite3 --sleep-request %SLEEP_REQUEST% %EXTRA% -o include=%INCLUDE% -o videos=false -o previews=video -d instagram_downloads "https://www.instagram.com/%~1/"
 set ERR=!errorlevel!
 if "!ERR!"=="0" goto :acct_ok
 set /a "NOTFOUND=ERR & 16"
@@ -228,7 +241,7 @@ goto :retry
 :acct_ok
 echo   [account finished]
 set /a SUCCESS+=1
-if exist "%DONEDIR%\" type nul > "%DONEDIR%\.done"
+if exist "%DONEDIR%\" type nul > "%DONEDIR%\%MARK%"
 set /a CONSEC=0
 exit /b 0
 
